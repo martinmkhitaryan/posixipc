@@ -401,6 +401,9 @@ same wait helper.
 
 ### GIL and free-threaded CPython
 
+Free-threaded CPython (3.13t / 3.14t) has problems right now. It is not
+in CI and is not a supported build.
+
 `acquire()` calls `pthread_mutex_trylock` with the GIL held. On `EBUSY`
 it releases the GIL and waits. `EOWNERDEAD` from trylock runs recovery
 with the GIL held. Blocking paths never touch a `PyObject` while the GIL
@@ -611,7 +614,6 @@ Numbers: [`benchmarks/RESULTS.md`](benchmarks/RESULTS.md). Re-run with
 | Tier | Platform |
 | --- | --- |
 | 1 | Linux x86-64, glibc, CPython 3.12–3.14 |
-| 1 | Linux x86-64, glibc, CPython 3.13t/3.14t |
 | 2 | Linux aarch64, glibc |
 | 2 | Linux x86-64, musl |
 | 3 | Other POSIX, feature-detected, not in CI |

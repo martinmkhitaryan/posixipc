@@ -21,7 +21,7 @@ jobs:
           platforms: arm64
       - uses: pypa/cibuildwheel@v2.23.3
         env:
-          CIBW_BUILD: cp312-* cp313-* cp314-* cp313t-* cp314t-*
+          CIBW_BUILD: cp312-* cp313-* cp314-*
           CIBW_SKIP: pp* *-win32 *-win_amd64 *-macosx*
           CIBW_ARCHS_LINUX: x86_64 aarch64
           CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28

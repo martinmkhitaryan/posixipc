@@ -89,7 +89,7 @@ pythonPlatform = "Linux"
 reportMissingModuleSource = false
 
 [tool.cibuildwheel]
-build = "cp312-* cp313-* cp314-* cp313t-* cp314t-*"
+build = "cp312-* cp313-* cp314-*"
 skip = "pp* *-win32 *-win_amd64 *-macosx*"
 
 [tool.cibuildwheel.linux]
