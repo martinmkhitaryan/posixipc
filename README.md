@@ -4,17 +4,11 @@
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-POSIX IPC and synchronization for Python. CPython C extension over `pthread_*`,
-`sem_*`, and POSIX shared memory.
+POSIX IPC and synchronization primitives for CPython: robust mutexes with `on_owner_died`, typed `Layout` segments, in-memory queues, and POSIX named semaphores and message queues. Linux extras (`futex`, `eventfd`, `memfd`, `FutexQueue`) live in `posixipc.linux`.
 
 > [!WARNING]
 > This code was written with Cursor (AI, multi-agent). It has not had a
 > human review. I will review it later, then publish packages.
-
-`RobustMutex` survives the death of the process that held it. POSIX reports
-`EOWNERDEAD`; it does not repair the bytes that owner was writing. Register
-`on_owner_died`. The next `acquire()` calls it while you hold the lock, marks
-the mutex consistent, and returns.
 
 See [`docs/guide.md`](docs/guide.md) for types and usage,
 [`docs/queue.md`](docs/queue.md) for queue layouts,
