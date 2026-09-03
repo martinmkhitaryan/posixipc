@@ -1,0 +1,132 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux-glibc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          allow-prereleases: true
+      - name: Install
+        run: |
+          python -m pip install -U pip
+          python -m pip install -e ".[test]"
+      - name: Import
+        run: python -c "import posixipc; print(posixipc.features.robust_mutex)"
+      - name: Test
+        run: python -m pytest
+      - name: Symbols
+        run: |
+          so=$(python -c "import posixipc._posixipc as m, inspect, os; print(m.__file__)")
+          nm -D --defined-only "$so" | grep ' [TtWw] ' | awk '{print $3}'
+          nm -D --defined-only "$so" | grep ' [TtWw] ' | awk '{print $3}' | grep -v '^PyInit__posixipc$' && exit 1 || true
+      - name: No libpython
+        run: |
+          so=$(python -c "import posixipc._posixipc as m; print(m.__file__)")
+          ldd "$so" | grep -i libpython && exit 1 || true
+
+  linux-glibc-freethreaded:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.13t", "3.14t"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          allow-prereleases: true
+      - name: Install
+        run: |
+          python -m pip install -U pip
+          python -m pip install -e ".[test]"
+      - name: Test
+        run: python -m pytest
+
+  musl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container: python:3.12-alpine
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: apk add --no-cache gcc musl-dev linux-headers cmake ninja
+      - name: Install
+        run: |
+          python -m pip install -U pip
+          python -m pip install -e ".[test]"
+      - name: Test
+        run: python -m pytest
+
+  sanitizer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Configure
+        run: |
+          cmake -B build-asan -DBUILD_TESTING=ON -DPOSIXIPC_DEVELOPER_MODE=ON -DPOSIXIPC_SANITIZER=address
+          cmake --build build-asan
+      - name: Install module
+        run: |
+          python -m pip install -U pip
+          python -m pip install -e ".[test]"
+        env:
+          CMAKE_ARGS: -DPOSIXIPC_SANITIZER=address
+      - name: CTest
+        run: ctest --test-dir build-asan --output-on-failure
+      - name: Pytest under ASan
+        env:
+          PYTHONMALLOC: malloc
+          ASAN_OPTIONS: detect_leaks=0:halt_on_error=1:suppressions=${{ github.workspace }}/misc/asan.supp
+        run: |
+          asan_so=$(cc -print-file-name=libasan.so)
+          LD_PRELOAD="$asan_so" python -m pytest tests -q --timeout=180
+
+  docs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: |
+          python -m pip install -U pip
+          python -m pip install -e ".[test]"
+      - name: Examples
+        run: |
+          python docs/examples/robust_mutex.py
+          python docs/examples/process_shared_mutex.py
+          python docs/examples/shared_memory.py
+          python docs/examples/semaphore.py
+          python docs/examples/crash_recovery.py
+          python docs/examples/queue.py
+          python docs/examples/linux.py
+      - name: mypy
+        run: python -m mypy --strict docs/examples
+      - name: Format
+        run: |
+          python -m ruff format --check .
+          python -m ruff check .

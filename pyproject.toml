@@ -1,0 +1,100 @@
+[build-system]
+requires = ["scikit-build-core~=1.0"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "posixipc"
+version = "1.0.0"
+description = "POSIX IPC and synchronization primitives for Python"
+authors = [
+    { name = "Martin Mkhitaryan", email = "mkhitaryan.martin@2000gmail.com" },
+]
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = [
+    "posix",
+    "ipc",
+    "shared-memory",
+    "mutex",
+    "robust-mutex",
+    "pthread",
+    "rwlock",
+    "semaphore",
+    "spinlock",
+    "barrier",
+    "queue",
+    "futex",
+    "multiprocessing",
+    "synchronization",
+    "linux",
+]
+classifiers = [
+    "Intended Audience :: Developers",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: C",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/martinmkhitaryan/posixipc"
+Repository = "https://github.com/martinmkhitaryan/posixipc"
+Documentation = "https://github.com/martinmkhitaryan/posixipc#readme"
+Discussions = "https://github.com/martinmkhitaryan/posixipc/discussions"
+"Bug Tracker" = "https://github.com/martinmkhitaryan/posixipc/issues"
+
+[project.optional-dependencies]
+test = [
+    "pytest~=9.0",
+    "pytest-timeout~=2.0",
+    "pytest-xdist~=3.0",
+    "mypy~=2.0",
+    "ruff~=0.16.0",
+]
+bench = ["pyperf~=2.0"]
+
+[tool.scikit-build]
+wheel.packages = ["src/posixipc"]
+build-dir = "build/{wheel_tag}"
+editable.rebuild = true
+cmake.version = ">=3.20"
+
+[tool.pytest.ini_options]
+addopts = "--timeout=30"
+testpaths = ["tests"]
+
+[tool.mypy]
+strict = true
+mypy_path = "src"
+files = ["docs/examples"]
+
+[tool.pyright]
+include = ["src", "tests", "docs/examples", "benchmarks"]
+exclude = ["build", "build-dev", "build-asan", "build-ubsan", "build-tsan", ".venv"]
+extraPaths = ["src"]
+stubPath = "src"
+venvPath = "."
+venv = ".venv"
+pythonVersion = "3.12"
+pythonPlatform = "Linux"
+reportMissingModuleSource = false
+
+[tool.cibuildwheel]
+build = "cp312-* cp313-* cp314-* cp313t-* cp314t-*"
+skip = "pp* *-win32 *-win_amd64 *-macosx*"
+
+[tool.cibuildwheel.linux]
+archs = ["x86_64", "aarch64"]
+manylinux-x86_64-image = "manylinux_2_28"
+manylinux-aarch64-image = "manylinux_2_28"
+musllinux-x86_64-image = "musllinux_1_2"
+musllinux-aarch64-image = "musllinux_1_2"
