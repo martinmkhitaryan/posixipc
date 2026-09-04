@@ -128,8 +128,9 @@ with m:
 | Processes, holder may crash | `RobustMutex` + `on_owner_died` |
 | Primitives in your own shared-memory layout | `posixipc` |
 
-`posixipc.Mutex` is not faster than `threading.Lock` in-process. See
-[Performance](#performance).
+Use `threading.Lock` for threads; that is the in-process API. Uncontended
+`posixipc.Mutex` is faster than `threading.Lock` on this machine, and
+about the same as `multiprocessing.Lock`. See [Performance](#performance).
 
 ---
 
@@ -600,9 +601,12 @@ No `Mutex.locked()`. POSIX cannot query a mutex without racing.
 
 ## Performance
 
-Python call overhead dominates an uncontended native lock. Target is
-parity with `threading.Lock` uncontended, and faster than
-`multiprocessing.Lock` across processes.
+Uncontended acquire+release is a Python call plus a native lock.
+On this machine `posixipc.Mutex` is faster than `threading.Lock` because
+`threading.Lock` is not a raw mutex: CPython 3.12 implements it as a
+POSIX semaphore plus argument parsing and a non-blocking try that still
+sets up a timeout. `posixipc.Mutex` does `pthread_mutex_trylock` with
+the GIL held. It matches `multiprocessing.Lock` (also a SemLock).
 
 Numbers: [`benchmarks/RESULTS.md`](benchmarks/RESULTS.md). Re-run with
 `python benchmarks/mutex_uncontended.py` (`taskset` if you can).
